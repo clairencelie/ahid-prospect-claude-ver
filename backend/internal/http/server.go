@@ -30,6 +30,14 @@ func NewRouter(s *Server) http.Handler {
 		r.Post("/prospects", s.handleCreateProspect)
 		r.Get("/prospects", s.handleListProspects)
 		r.Get("/prospects/{id}", s.handleGetProspect)
+
+		r.Get("/companies", s.handleSearchCompanies)
+		r.Post("/companies", s.handleCreateCompany)
+		r.Get("/companies/{id}", s.handleGetCompany)
+		r.Get("/companies/{id}/relationships", s.handleListCompanyRelationships)
+
+		r.Post("/relationships", s.handleCreateRelationship)
+		r.Patch("/relationships/{id}/verify", s.handleVerifyRelationship)
 	})
 
 	return r

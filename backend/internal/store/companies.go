@@ -71,6 +71,39 @@ func (s *Store) GetCompany(ctx context.Context, id string) (*domain.Company, err
 	return &c, nil
 }
 
+type CreateCompanyInput struct {
+	NPWP          *string
+	NIB           *string
+	LegalName     string
+	BrandNames    []string
+	Domain        *string
+	Phone         *string
+	Address       *string
+	OccupationLOB *string
+	GroupID       *string
+	Source        string
+}
+
+func (s *Store) CreateCompany(ctx context.Context, in CreateCompanyInput, normalizedName string) (*domain.Company, error) {
+	row := s.Pool.QueryRow(ctx, `
+		INSERT INTO companies (npwp, nib, legal_name, normalized_name, brand_names, domain, phone, address,
+		                        occupation_lob, group_id, source)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+		RETURNING id, npwp, nib, legal_name, normalized_name, brand_names, domain, phone, address,
+		          occupation_lob, group_id, source, confidence, verification_status, created_at, updated_at`,
+		in.NPWP, in.NIB, in.LegalName, normalizedName, in.BrandNames, in.Domain, in.Phone, in.Address,
+		in.OccupationLOB, in.GroupID, in.Source,
+	)
+
+	var c domain.Company
+	if err := row.Scan(&c.ID, &c.NPWP, &c.NIB, &c.LegalName, &c.NormalizedName, &c.BrandNames, &c.Domain,
+		&c.Phone, &c.Address, &c.OccupationLOB, &c.GroupID, &c.Source, &c.Confidence, &c.VerificationStatus,
+		&c.CreatedAt, &c.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 func (s *Store) SearchCompanies(ctx context.Context, q string) ([]domain.Company, error) {
 	rows, err := s.Pool.Query(ctx, `
 		SELECT id, npwp, nib, legal_name, normalized_name, brand_names, domain, phone, address,
