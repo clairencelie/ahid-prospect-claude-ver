@@ -80,6 +80,20 @@ func (s *Server) evaluateProspect(ctx context.Context, role domain.Role, req che
 		Lock:           lockInfo{Protected: false},
 	}
 
+	key := ""
+	if req.NPWP != nil && *req.NPWP != "" {
+		key = matching.NormalizeDigits(*req.NPWP)
+	} else if req.NIB != nil && *req.NIB != "" {
+		key = matching.NormalizeDigits(*req.NIB)
+	}
+	if key != "" {
+		lock, err := s.lockStatus(ctx, key)
+		if err != nil {
+			return nil, err
+		}
+		result.Lock = lock
+	}
+
 	if req.NPWP != nil && *req.NPWP != "" {
 		npwp := matching.NormalizeDigits(*req.NPWP)
 		policies, err := s.Core.ActivePoliciesByNPWP(ctx, npwp)
@@ -118,6 +132,22 @@ func (s *Server) evaluateProspect(ctx context.Context, role domain.Role, req che
 	result.Candidates = topCandidates(outcome.Candidates, 5)
 
 	return result, nil
+}
+
+// lockStatus reports whether `key` (NPWP/NIB) is currently under an active
+// protection lock — never the holder's identity, only the boolean (FR5.3).
+func (s *Server) lockStatus(ctx context.Context, key string) (lockInfo, error) {
+	if err := s.Store.ReleaseExpiredLock(ctx, key); err != nil {
+		return lockInfo{}, err
+	}
+	lock, err := s.Store.GetActiveLock(ctx, key)
+	if err != nil {
+		return lockInfo{}, err
+	}
+	if lock == nil {
+		return lockInfo{Protected: false}, nil
+	}
+	return lockInfo{Protected: true, ExpiresAt: timePtr(lock.ExpiresAt)}, nil
 }
 
 func toProspectInput(req checkRequest) matching.ProspectInput {

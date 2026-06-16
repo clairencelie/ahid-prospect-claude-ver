@@ -82,6 +82,11 @@ func (s *Store) SetProspectCompany(ctx context.Context, prospectID, companyID st
 	return err
 }
 
+func (s *Store) SetProspectStage(ctx context.Context, prospectID, stage string) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE prospects SET stage = $1 WHERE id = $2`, stage, prospectID)
+	return err
+}
+
 func (s *Store) RouteToUW(ctx context.Context, id string) (*domain.Prospect, error) {
 	row := s.Pool.QueryRow(ctx, `
 		UPDATE prospects SET stage = 'uw', tanggal_masuk_uw = now() WHERE id = $1
