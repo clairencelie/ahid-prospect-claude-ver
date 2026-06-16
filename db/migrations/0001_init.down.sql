@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS policies;
+DROP TABLE IF EXISTS clients;
+DROP TABLE IF EXISTS enrichment_jobs;
+DROP TABLE IF EXISTS match_results;
+DROP TABLE IF EXISTS prospect_locks;
+DROP TABLE IF EXISTS prospects;
+DROP TABLE IF EXISTS company_relationships;
+DROP TABLE IF EXISTS companies;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS branches;
