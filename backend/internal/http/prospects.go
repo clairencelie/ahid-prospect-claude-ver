@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/go-chi/chi/v5"
 
@@ -66,9 +67,9 @@ func (s *Server) handleProspectsCheck(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
-// evaluateProspect runs the M2 existing-client check, masking owning-branch
-// identity for the `marketing` role. The M3 matching engine plugs in below
-// once the existing-client short-circuit doesn't apply.
+// evaluateProspect runs the M2 existing-client check first (it short-circuits
+// on an active policy), then the M3 matching engine against the company
+// master. Owning-branch identity is masked for the `marketing` role.
 func (s *Server) evaluateProspect(ctx context.Context, role domain.Role, req checkRequest) (*checkResult, error) {
 	result := &checkResult{
 		Band:           domain.BandPass,
@@ -102,9 +103,95 @@ func (s *Server) evaluateProspect(ctx context.Context, role domain.Role, req che
 		}
 	}
 
-	// M3 (matching engine) will replace this PASS placeholder with the
-	// composite-score / band decision against the company master.
+	candidates, err := s.Store.ListCandidateCompanies(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	outcome := matching.Evaluate(toProspectInput(req), toMatchingCandidates(candidates), matching.Thresholds{
+		BlockThreshold:  s.Config.BlockThreshold,
+		ReviewThreshold: s.Config.ReviewThreshold,
+	})
+	result.Band = outcome.Band
+	result.Reason = outcome.Reason
+	result.CompositeScore = outcome.CompositeScore
+	result.Candidates = topCandidates(outcome.Candidates, 5)
+
 	return result, nil
+}
+
+func toProspectInput(req checkRequest) matching.ProspectInput {
+	in := matching.ProspectInput{RawCompanyName: req.RawCompanyName}
+	if req.NPWP != nil {
+		in.NPWP = matching.NormalizeDigits(*req.NPWP)
+	}
+	if req.NIB != nil {
+		in.NIB = matching.NormalizeDigits(*req.NIB)
+	}
+	if req.Domain != nil {
+		in.Domain = *req.Domain
+	}
+	if req.Phone != nil {
+		in.Phone = *req.Phone
+	}
+	if req.Address != nil {
+		in.Address = *req.Address
+	}
+	if req.OccupationLOB != nil {
+		in.OccupationLOB = *req.OccupationLOB
+	}
+	return in
+}
+
+func toMatchingCandidates(companies []store.CompanyCandidate) []matching.CandidateCompany {
+	out := make([]matching.CandidateCompany, 0, len(companies))
+	for _, cc := range companies {
+		c := cc.Company
+		mc := matching.CandidateCompany{
+			ID:                     c.ID,
+			LegalName:              c.LegalName,
+			NormalizedName:         c.NormalizedName,
+			BrandNames:             c.BrandNames,
+			Verified:               c.VerificationStatus == domain.Verified,
+			HasVerifiedGroupLink:   cc.HasVerifiedGroupLink,
+			HasUnverifiedGroupLink: cc.HasUnverifiedGroupLink,
+		}
+		if c.NPWP != nil {
+			mc.NPWP = *c.NPWP
+		}
+		if c.NIB != nil {
+			mc.NIB = *c.NIB
+		}
+		if c.Domain != nil {
+			mc.Domain = *c.Domain
+		}
+		if c.Phone != nil {
+			mc.Phone = *c.Phone
+		}
+		if c.Address != nil {
+			mc.Address = *c.Address
+		}
+		if c.OccupationLOB != nil {
+			mc.OccupationLOB = *c.OccupationLOB
+		}
+		out = append(out, mc)
+	}
+	return out
+}
+
+// topCandidates keeps the response payload small: the strongest n candidates
+// by score, since the master can grow far larger than what's useful to show.
+func topCandidates(candidates []domain.Candidate, n int) []domain.Candidate {
+	sorted := make([]domain.Candidate, len(candidates))
+	copy(sorted, candidates)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Score > sorted[j].Score })
+	if len(sorted) > n {
+		sorted = sorted[:n]
+	}
+	if sorted == nil {
+		sorted = []domain.Candidate{}
+	}
+	return sorted
 }
 
 func (s *Server) handleCreateProspect(w http.ResponseWriter, r *http.Request) {
