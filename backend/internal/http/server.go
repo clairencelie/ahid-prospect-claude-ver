@@ -31,6 +31,8 @@ func NewRouter(s *Server) http.Handler {
 		r.Get("/prospects", s.handleListProspects)
 		r.Get("/prospects/{id}", s.handleGetProspect)
 		r.Post("/prospects/{id}/lock", s.handleLockProspect)
+		r.Post("/prospects/{id}/route-uw", s.handleRouteUW)
+		r.Post("/prospects/{id}/close-uw", s.handleCloseUW)
 
 		r.Get("/companies", s.handleSearchCompanies)
 		r.Post("/companies", s.handleCreateCompany)

@@ -42,6 +42,13 @@ func (s *Store) GetMatchResult(ctx context.Context, id string) (*domain.MatchRes
 	return scanMatchResult(row)
 }
 
+func (s *Store) GetLatestMatchResultForProspect(ctx context.Context, prospectID string) (*domain.MatchResult, error) {
+	row := s.Pool.QueryRow(ctx, `
+		SELECT `+matchResultColumns+` FROM match_results
+		WHERE prospect_id = $1 ORDER BY created_at DESC LIMIT 1`, prospectID)
+	return scanMatchResult(row)
+}
+
 // ListReviewQueue returns REVIEW-band results still awaiting a final
 // checker decision (FR6.1) — once a checker approves, checker_id is set and
 // the item drops out of the queue.
