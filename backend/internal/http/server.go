@@ -19,7 +19,14 @@ type Server struct {
 func NewRouter(s *Server) http.Handler {
 	r := chi.NewRouter()
 
+	// Demo-only permissive CORS: the frontend (Vite dev server or its own
+	// container) runs on a different origin/port than the API.
+	r.Use(corsMiddleware)
+
 	r.Get("/api/v1/healthz", s.handleHealthz)
+	// Public (no demo-auth header required yet): lets the frontend's role
+	// switcher list seeded users before any X-Demo-User-Id is set (§10).
+	r.Get("/api/v1/users", s.handleListUsers)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(s.demoAuthMiddleware)
