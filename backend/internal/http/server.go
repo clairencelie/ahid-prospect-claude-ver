@@ -39,6 +39,10 @@ func NewRouter(s *Server) http.Handler {
 
 		r.Post("/relationships", s.handleCreateRelationship)
 		r.Patch("/relationships/{id}/verify", s.handleVerifyRelationship)
+
+		r.Get("/review-queue", s.handleGetReviewQueue)
+		r.Post("/match-results/{id}/maker", s.handleMakerDecision)
+		r.Post("/match-results/{id}/checker", s.handleCheckerDecision)
 	})
 
 	return r
