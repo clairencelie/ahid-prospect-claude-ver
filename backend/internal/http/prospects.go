@@ -3,8 +3,10 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -131,7 +133,30 @@ func (s *Server) evaluateProspect(ctx context.Context, role domain.Role, req che
 	result.CompositeScore = outcome.CompositeScore
 	result.Candidates = topCandidates(outcome.Candidates, 5)
 
+	if outcome.Band == domain.BandPass {
+		// FR7.1/FR7.4: no confident master match — enqueue for async
+		// enrichment, but never let it slow down this response. The actual
+		// (mocked) AI lookup happens later on the worker's own ticker.
+		s.enqueueEnrichmentAsync(req.RawCompanyName)
+	}
+
 	return result, nil
+}
+
+func (s *Server) enqueueEnrichmentAsync(companyName string) {
+	normalizedName := matching.NormalizeName(companyName)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		pending, err := s.Store.HasPendingEnrichmentJob(ctx, normalizedName)
+		if err != nil || pending {
+			return
+		}
+		if _, err := s.Store.EnqueueEnrichmentJob(ctx, companyName, normalizedName); err != nil {
+			log.Printf("enrichment: failed to enqueue job for %q: %v", companyName, err)
+		}
+	}()
 }
 
 // lockStatus reports whether `key` (NPWP/NIB) is currently under an active

@@ -1,0 +1,20 @@
+{
+  "DELTA GIRI WACANA": {
+    "group": "DHARMA WIBAWA GUNA GROUP",
+    "siblings": ["ALAM SEMESTA AGRO", "BANGUN SAHABAT TANI"],
+    "confidence": 0.78,
+    "source": "ai_mock"
+  },
+  "LOGISLY": {
+    "legal_name": "PT LOGISTIK CANGGIH INDONESIA",
+    "relation": "brand_of",
+    "confidence": 0.82,
+    "source": "ai_mock"
+  },
+  "TEKNOLOGI INOVASI MANDIRI": {
+    "group": "MANDIRI DIGITAL HOLDING",
+    "siblings": ["MANDIRI CLOUD SOLUTIONS"],
+    "confidence": 0.65,
+    "source": "ai_mock"
+  }
+}

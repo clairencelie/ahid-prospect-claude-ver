@@ -17,6 +17,9 @@ type Config struct {
 	BlockThreshold  float64
 	ReviewThreshold float64
 	LockTTLDays     int
+	GeminiAPIKey    string
+	GeminiModel     string
+	FixturesPath    string
 }
 
 func FromEnv() Config {
@@ -26,6 +29,9 @@ func FromEnv() Config {
 		BlockThreshold:  getenvFloat("BLOCK_THRESHOLD", 80),
 		ReviewThreshold: getenvFloat("REVIEW_THRESHOLD", 50),
 		LockTTLDays:     getenvInt("LOCK_TTL_DAYS", 30),
+		GeminiAPIKey:    getenv("GEMINI_API_KEY", ""),
+		GeminiModel:     getenv("GEMINI_MODEL", ""),
+		FixturesPath:    getenv("ENRICHMENT_FIXTURES_PATH", "internal/enrichment/fixtures/enrichment_fixtures.json"),
 	}
 }
 

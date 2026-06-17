@@ -3,7 +3,10 @@
 // other just to pass records around.
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Role string
 
@@ -138,13 +141,13 @@ type MatchResult struct {
 }
 
 type EnrichmentJob struct {
-	ID             string     `json:"id"`
-	CompanyName    string     `json:"company_name"`
-	NormalizedName string     `json:"normalized_name"`
-	Status         string     `json:"status"`
-	Result         []byte     `json:"result,omitempty"`
-	RequestedAt    time.Time  `json:"requested_at"`
-	CompletedAt    *time.Time `json:"completed_at,omitempty"`
+	ID             string          `json:"id"`
+	CompanyName    string          `json:"company_name"`
+	NormalizedName string          `json:"normalized_name"`
+	Status         string          `json:"status"`
+	Result         json.RawMessage `json:"result,omitempty"`
+	RequestedAt    time.Time       `json:"requested_at"`
+	CompletedAt    *time.Time      `json:"completed_at,omitempty"`
 }
 
 type Client struct {
@@ -166,12 +169,12 @@ type Policy struct {
 }
 
 type AuditLog struct {
-	ID         string    `json:"id"`
-	ActorID    *string   `json:"actor_id,omitempty"`
-	Action     string    `json:"action"`
-	EntityType string    `json:"entity_type"`
-	EntityID   *string   `json:"entity_id,omitempty"`
-	Before     []byte    `json:"before,omitempty"`
-	After      []byte    `json:"after,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID         string          `json:"id"`
+	ActorID    *string         `json:"actor_id,omitempty"`
+	Action     string          `json:"action"`
+	EntityType string          `json:"entity_type"`
+	EntityID   *string         `json:"entity_id,omitempty"`
+	Before     json.RawMessage `json:"before,omitempty"`
+	After      json.RawMessage `json:"after,omitempty"`
+	CreatedAt  time.Time       `json:"created_at"`
 }
