@@ -61,6 +61,9 @@ services:
     environment:
       VITE_API_BASE: ${VITE_API_BASE}
     ports: ["5173:5173"]
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
   adminer:
     image: adminer
