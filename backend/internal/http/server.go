@@ -46,6 +46,9 @@ func NewRouter(s *Server) http.Handler {
 
 		r.Post("/enrichment/jobs", s.handleEnqueueEnrichmentJob)
 		r.Get("/enrichment/jobs/{id}", s.handleGetEnrichmentJob)
+
+		r.Get("/audit-logs", s.handleListAuditLogs)
+		r.Get("/monitoring/summary", s.handleMonitoringSummary)
 	})
 
 	return r

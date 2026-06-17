@@ -162,8 +162,14 @@ func (s *Server) enqueueEnrichmentAsync(companyName string) {
 // lockStatus reports whether `key` (NPWP/NIB) is currently under an active
 // protection lock — never the holder's identity, only the boolean (FR5.3).
 func (s *Server) lockStatus(ctx context.Context, key string) (lockInfo, error) {
-	if err := s.Store.ReleaseExpiredLock(ctx, key); err != nil {
+	released, err := s.Store.ReleaseExpiredLock(ctx, key)
+	if err != nil {
 		return lockInfo{}, err
+	}
+	if released != nil {
+		if err := s.Store.WriteAudit(ctx, nil, "lock_expired_released", "prospect_lock", &released.ID, nil, released); err != nil {
+			return lockInfo{}, err
+		}
 	}
 	lock, err := s.Store.GetActiveLock(ctx, key)
 	if err != nil {
@@ -283,6 +289,10 @@ func (s *Server) handleCreateProspect(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to create prospect")
+		return
+	}
+	if err := s.Store.WriteAudit(r.Context(), &user.ID, "prospect_created", "prospect", &prospect.ID, nil, prospect); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to write audit log")
 		return
 	}
 

@@ -49,9 +49,16 @@ func (s *Server) handleLockProspect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.Store.ReleaseExpiredLock(r.Context(), key); err != nil {
+	released, err := s.Store.ReleaseExpiredLock(r.Context(), key)
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to release expired locks")
 		return
+	}
+	if released != nil {
+		if err := s.Store.WriteAudit(r.Context(), nil, "lock_expired_released", "prospect_lock", &released.ID, nil, released); err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to write audit log")
+			return
+		}
 	}
 
 	existing, err := s.Store.GetActiveLock(r.Context(), key)

@@ -12,11 +12,22 @@ import (
 
 // ReleaseExpiredLock implements the FR5.2 "lazy check on read" sweep: before
 // looking up an active lock for this key, expire it if its TTL has passed.
-func (s *Store) ReleaseExpiredLock(ctx context.Context, npwp string) error {
-	_, err := s.Pool.Exec(ctx, `
+// Returns the released lock (for an FR8.1 audit entry), or nil if nothing
+// needed releasing.
+func (s *Store) ReleaseExpiredLock(ctx context.Context, npwp string) (*domain.ProspectLock, error) {
+	row := s.Pool.QueryRow(ctx, `
 		UPDATE prospect_locks SET status = 'released', release_reason = 'expired'
-		WHERE npwp = $1 AND status = 'active' AND expires_at < now()`, npwp)
-	return err
+		WHERE npwp = $1 AND status = 'active' AND expires_at < now()
+		RETURNING id, prospect_id, company_id, npwp, branch_id, marketing_id, locked_at, expires_at, status, release_reason`,
+		npwp)
+	lock, err := scanLock(row)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return lock, nil
 }
 
 func (s *Store) GetActiveLock(ctx context.Context, npwp string) (*domain.ProspectLock, error) {
