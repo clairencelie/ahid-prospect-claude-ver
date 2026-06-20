@@ -66,6 +66,13 @@ Go/Node services in Docker.)
 Each of these can be driven from the UI (role switcher → Intake/Review
 Queue/Company Master) or via `curl` against `http://localhost:8080/api/v1`.
 
+> **Quick try — protection lock:** run `./scripts/demo-protection.sh` once
+> after the stack is up. It registers and locks a prospect as Branch
+> Surabaya, then prints the exact company name + NPWP to type into the
+> Intake form as `Budi Marketing (Jakarta)` so you can watch it get blocked
+> by protection (no identity leaked) and land in the compliance Review
+> Queue. This is scenario 4 below, pre-staged for you.
+
 1. **Existing client** — Intake a prospect with NPWP `031234567801000`
    (`PT Cahaya Abadi Sejahtera`) → `BLOCK` / `existing_active_policy`.
 2. **Brand vs legal name** — Intake `Logisly` (no NPWP) → matches the

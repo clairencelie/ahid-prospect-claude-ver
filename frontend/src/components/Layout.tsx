@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { RoleSwitcher } from "./RoleSwitcher";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { useRole } from "../context/RoleContext";
 
 const navItemStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties => ({
@@ -13,6 +14,7 @@ const navItemStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties 
 
 export function Layout() {
   const { currentUser, loading, error } = useRole();
+  const location = useLocation();
 
   if (loading) return <div style={{ padding: 24 }}>Loading...</div>;
   if (error) return <div style={{ padding: 24, color: "#c0392b" }}>Failed to load: {error}</div>;
@@ -65,7 +67,9 @@ export function Layout() {
         <RoleSwitcher />
       </header>
       <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-        <Outlet />
+        <ErrorBoundary key={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );
